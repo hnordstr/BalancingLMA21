@@ -141,4 +141,4 @@ def year_comparison_table(area, scenario):
 
 
 
-#print(year_comparison_table('SE2', 'SF45'))
+print(year_comparison_table('SE2', 'SF45'))
