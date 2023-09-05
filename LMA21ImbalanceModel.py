@@ -861,7 +861,7 @@ class Model:
             self.create_result_files()
 
 
-m = Model(start_date='2009-01-01', scenario='EF45', simulated_days=52*7, save=True, quarters=False, fixed_ramp=False, trm=True)
+m = Model(start_date='2009-01-01', scenario='EF45', simulated_days=52*7, save=True, quarters=False, fixed_ramp=False, trm=False)
 m.run()
 
 # df = pd.DataFrame(columns=['Demand', 'Wind', 'Hydro', 'PV'], index=list(range(1982, 2017)))

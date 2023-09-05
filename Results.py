@@ -27,7 +27,7 @@ scenario_dict = {
 
 path = 'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\KTH\\Papers&Projects\\J3 - Balancing analysis\\Results\\'
 area='SE4'
-color_dict = {0: 'green', 1: 'red', 2:'blue', 3:'orange'}
+color_dict = {'EF45': 'green', 'FM45': 'red', 'EP45': 'blue', 'SF45':'orange'}
 
 def duration_plot(area, year):
     plt.rcParams.update({'font.size': 12})
@@ -58,23 +58,25 @@ def duration_plot(area, year):
     x = np.linspace(0, 100, 52 * 7 * 24 * 60)
     for i in range(4):
         plt.plot(data_dict[scenario_new[i]]['Percentage'].tolist(), data_dict[scenario_new[i]]['Imbalance'].tolist(),
-                 label=scenario_dict[scenario_new[i]], linewidth=2, color=color_dict[i])
+                 label=scenario_dict[scenario_new[i]], linewidth=2, color=color_dict[scenario_new[i]])
         if i == 3:
             pass
-            plt.fill_between(x, data_dict[scenario_new[i]]['Imbalance'].tolist(), alpha=0.4, color=color_dict[i])
+            plt.fill_between(x, data_dict[scenario_new[i]]['Imbalance'].tolist(), alpha=0.4,
+                             color=color_dict[scenario_new[i]])
         else:
             plt.fill_between(x, data_dict[scenario_new[i + 1]]['Imbalance'].tolist(),
-                             data_dict[scenario_new[i]]['Imbalance'].tolist(), alpha=0.4, color=color_dict[i])
+                             data_dict[scenario_new[i]]['Imbalance'].tolist(), alpha=0.4,
+                             color=color_dict[scenario_new[i]])
     max_val = data_dict[scenario_new[0]]['Imbalance'].max() * 0.7
     plt.ylabel('Absolute imbalance [MW]')
     plt.xlabel('Share of time [%]')
-    plt.xlim(0,1.2 * zero_val)
+    plt.xlim(0,1.2 * zero_max)
     plt.ylim(0, max_val)
     plt.grid()
     plt.legend()
     plt.tight_layout()
     fig = plt.gcf()
-    save = True
+    save = False
     if save:
         fig.savefig(
             f'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Figures\\DurationPlot_{area}_{year}.pdf',
@@ -115,7 +117,7 @@ def time_plot(area, year):
     plt.xticks(rotation=45)
     plt.tight_layout()
     fig = plt.gcf()
-    save = True
+    save = False
     if save:
         fig.savefig(
             f'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Figures\\TimePlot_{area}_{year}.pdf',
@@ -138,7 +140,57 @@ def year_comparison_table(area, scenario):
     print(f'TABLE FOR AREA {area} SCENARIO {scenario}')
     print(df)
 
+def year_comparison_pdf(area, scenario): #Not so good looking
+    df = pd.DataFrame(columns=['Imbalance [MW]', 'Year'])
+    imb_list = []
+    year_list = []
+    for y in years:
+        with open(f'{path}{scenario}_{y}.pickle', 'rb') as handle:
+            dict_in = pkl.load(handle)
+        imb_list.extend(dict_in['High']['Netted imbalance'][area].tolist())
+        year_list.extend(y for n in range(dict_in['High']['Netted imbalance'].__len__()))
+    df['Imbalance [MW]'] = imb_list
+    df['Year'] = year_list
+    plt.rcParams.update({'font.size': 12})
+    sns.kdeplot(data=df, x='Imbalance [MW]', hue='Year', fill=True, alpha=0.4, palette='crest', linewidth=2)
+    plt.xlim(-2000, 2000)
+    plt.grid()
+    plt.tight_layout()
+    plt.show()
+
+def sensitivity_comparison(area):
+    df = pd.DataFrame(columns=['Imbalance [MW]', 'Case'])
+    imb_list = []
+    case_list = []
+    for f in ['', '_Quarter', '_FixRamp', '_TRM']:
+        with open(f'{path}EF45_2009{f}.pickle', 'rb') as handle:
+            dict_in = pkl.load(handle)
+        imb_list.extend(dict_in['High']['Netted imbalance'][area].abs().tolist())
+        if f == '':
+            case_list.extend('Base' for n in range(dict_in['High']['Netted imbalance'].__len__()))
+        elif f == '_Quarter':
+            case_list.extend('Quarters' for n in range(dict_in['High']['Netted imbalance'].__len__()))
+        elif f == '_FixRamp':
+            case_list.extend('Fixed ramp' for n in range(dict_in['High']['Netted imbalance'].__len__()))
+        elif f == '_TRM':
+            case_list.extend('TRM' for n in range(dict_in['High']['Netted imbalance'].__len__()))
+    df['Imbalance [MW]'] = imb_list
+    df['Case'] = case_list
+    plt.rcParams.update({'font.size': 12})
+    sns.boxenplot(data=df, x='Case', y='Imbalance [MW]')
+    plt.grid(axis='y')
+    plt.tight_layout()
+    fig = plt.gcf()
+    save = False
+    if save:
+        fig.savefig(
+            f'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Figures\\Sensitivity_{area}.pdf',
+            dpi=fig.dpi, pad_inches=0, bbox_inches='tight')
+    plt.clf()
+
+def map_plot(scenario, year):
+    with open(f'{path}{scenario}_{year}.pickle', 'rb') as handle:
+        dict_in = pkl.load(handle)
 
 
-
-print(year_comparison_table('SE2', 'SF45'))
+year_comparison_table('SE1', 'FM45')
