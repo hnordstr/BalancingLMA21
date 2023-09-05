@@ -185,7 +185,7 @@ def sensitivity_comparison(area):
     df = pd.DataFrame(columns=['Imbalance [MW]', 'Case'])
     imb_list = []
     case_list = []
-    for f in ['', '_Quarter', '_FixRamp', '_TRM']:
+    for f in ['', '_Quarter', '_FixRamp', '_TRM', '_ImprovedForecast']:
         with open(f'{path}EF45_2009{f}.pickle', 'rb') as handle:
             dict_in = pkl.load(handle)
         imb_list.extend(dict_in['High']['Netted imbalance'][area].abs().tolist())
@@ -197,6 +197,8 @@ def sensitivity_comparison(area):
             case_list.extend('Fixed ramp' for n in range(dict_in['High']['Netted imbalance'].__len__()))
         elif f == '_TRM':
             case_list.extend('TRM' for n in range(dict_in['High']['Netted imbalance'].__len__()))
+        elif f == '_ImprovedForecast':
+            case_list.extend('Better forecast' for n in range(dict_in['High']['Netted imbalance'].__len__()))
     df['Imbalance [MW]'] = imb_list
     df['Case'] = case_list
     plt.rcParams.update({'font.size': 12})
@@ -204,7 +206,7 @@ def sensitivity_comparison(area):
     plt.grid(axis='y')
     plt.tight_layout()
     fig = plt.gcf()
-    save = False
+    save = True
     if save:
         fig.savefig(
             f'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Figures\\Sensitivity_{area}.pdf',
@@ -301,5 +303,5 @@ def map_plot(scenario, year):
                                     line_color='orange'))
     fig.show()
 
-
-map_plot('SF45', 2009)
+for a in areas:
+    sensitivity_comparison(a)
