@@ -3,6 +3,11 @@ import numpy as np
 import pickle as pkl
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.graph_objects as go
+import geojson_rewind
+import geopandas as gpd
+import plotly.express as px
+import json
 
 """Pickle file with dictionary:
 path\\{scenario}_{year}.pickle some years/scenarios have _FixRamp, _Quarter, and _TRM
@@ -15,6 +20,24 @@ Time: Run-time
 """
 
 areas = ('SE1', 'SE2', 'SE3', 'SE4', 'NO1', 'NO2', 'NO3', 'NO4', 'NO5', 'DK2', 'FI')
+lines = {
+        'SE2SE1': 'SE1SE2',
+        'NO4SE1': 'SE1NO4',
+        'FISE1': 'SE1FI',
+        'NO4SE2': 'SE2NO4',
+        'NO3SE2': 'SE2NO3',
+        'SE3SE2': 'SE2SE3',
+        'NO1SE3': 'SE3NO1',
+        'SE4SE3': 'SE3SE4',
+        'DK2SE4': 'SE4DK2',
+        'NO2NO1': 'NO1NO2',
+        'NO3NO1': 'NO1NO3',
+        'NO5NO1': 'NO1NO5',
+        'NO5NO2': 'NO2NO5',
+        'NO5NO3': 'NO3NO5',
+        'NO4NO3': 'NO3NO4'
+}
+
 scenarios = ['SF45', 'EP45', 'EF45', 'FM45']
 years = [2009, 1999, 1992]
 
@@ -191,6 +214,92 @@ def sensitivity_comparison(area):
 def map_plot(scenario, year):
     with open(f'{path}{scenario}_{year}.pickle', 'rb') as handle:
         dict_in = pkl.load(handle)
+    imb = pd.DataFrame(columns=['Imbalance', 'id'] )
+    imb['Imbalance'] = [dict_in['High']['Pre-net imbalance'][a].abs().mean() for a in areas]
+    imb['id'] = [a for a in areas]
+
+    transm = pd.DataFrame(columns=['Transmission', 'id'])
+    transm['Transmission'] = [(dict_in['High']['Netting transmission'][l] -
+                           dict_in['High']['Netting transmission'][lines[l]]).mean() for l in lines.keys()]
+    transm['id'] = [l for l in lines.keys()]
+
+    maps_in = gpd.read_file('C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\KTH\\Papers&Projects\\DynamicFRR\\nordic.geojson')
+    maps_in = json.loads(maps_in.to_json())
+    maps = geojson_rewind.rewind(maps_in, rfc7946=False)
+
+    for f in maps['features']:
+       f['id'] = f['properties']['name']
+
+    fig = px.choropleth(imb,
+                       locations='id',
+                       geojson=maps,
+                       featureidkey='id',
+                       color='Imbalance',
+                       hover_name='id',
+                       color_continuous_scale=px.colors.sequential.Blues,
+                       range_color=[0, imb['Imbalance'].max()*1.1],
+                       scope='europe')
+    fig.update_geos(fitbounds="locations", visible=False)
+    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+    fig.update_layout(coloraxis_colorbar=dict(
+       ticks="outside", ticksuffix=" MW",
+       dtick=200, len=0.8, thickness=50, y=0.53,x=0.67,
+       title=dict(text='Imbalance', font=dict(size=30))
+    ))
+    fig.update_coloraxes(colorbar_tickfont_size=30)
+    line_map = gpd.read_file('C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\KTH\\Papers&Projects\\J3 - Balancing analysis\\linemap.geojson')
+
+    print(transm)
+    for i in transm.index:
+        if transm['Transmission'][i] > 0:
+            lon1 = float(line_map.loc[line_map['id'] == f'{transm["id"][i]}_start']['geometry'].x)
+            lat1 = float(line_map.loc[line_map['id'] == f'{transm["id"][i]}_start']['geometry'].y)
+            lon2 = float(line_map.loc[line_map['id'] == f'{transm["id"][i]}_end']['geometry'].x)
+            lat2 = float(line_map.loc[line_map['id'] == f'{transm["id"][i]}_end']['geometry'].y)
+            if abs(lon1 - lon2) > abs(lat1 - lat2):
+                lat2 = lat1
+            else:
+                lon2 = lon1
+        else:
+            lon1 = float(line_map.loc[line_map['id'] == f'{transm["id"][i]}_end']['geometry'].x)
+            lat1 = float(line_map.loc[line_map['id'] == f'{transm["id"][i]}_end']['geometry'].y)
+            lon2 = float(line_map.loc[line_map['id'] == f'{transm["id"][i]}_start']['geometry'].x)
+            lat2 = float(line_map.loc[line_map['id'] == f'{transm["id"][i]}_start']['geometry'].y)
+            if abs(lon1 - lon2) > abs(lat1 - lat2):
+                lat2 = lat1
+            else:
+                lon2 = lon1
 
 
-year_comparison_table('SE1', 'FM45')
+        fig.add_trace(go.Scattergeo(lat=[lat1, lat2], lon = [lon1, lon2], mode='lines',
+                                    line=dict(width=6, color='orange')))
+        l = 0.3  # the arrow length
+        widh = 0.2  # 2*widh is the width of the arrow base as triangle
+
+        A = np.array([lon1, lat1])
+        if lon2 > lon1:
+            B = np.array([lon2 + 0.2, lat2])
+        elif lon2 < lon1:
+            B = np.array([lon2 - 0.2, lat2])
+        elif lat2 > lat1:
+            B = np.array([lon2, lat2 + 0.2])
+        elif lat2 < lat1:
+            B = np.array([lon2, lat2 - 0.2])
+        v = B - A
+        w = v / np.linalg.norm(v)
+        u = np.array([-w[1], w[0]])  # u orthogonal on  w
+
+        P = B - l * w
+        S = P - widh * u
+        T = P + widh * u
+
+        fig.add_trace(go.Scattergeo(lon=[S[0], T[0], B[0], S[0]],
+                                    lat=[S[1], T[1], B[1], S[1]],
+                                    mode='lines',
+                                    fill='toself',
+                                    fillcolor='orange',
+                                    line_color='orange'))
+    fig.show()
+
+
+map_plot('SF45', 2009)
