@@ -116,7 +116,7 @@ def time_plot(area, year):
     imb_list = []
     time_list = []
     scen_list = []
-    for scenario in scenarios:
+    for scenario in ['EF45', 'EP45']:
         with open(f'{path}{scenario}_{year}.pickle', 'rb') as handle:
             dict_in = pkl.load(handle)
         imb = dict_in['High']['Netted imbalance']
@@ -136,16 +136,16 @@ def time_plot(area, year):
     df['Scenario'] = scen_list
     plt.rcParams.update({'font.size': 12})
     plt.grid()
-    sns.boxplot(x=df['Time interval [min]'], y=df['Imbalance [MW]'], hue=df['Scenario'], palette='Set2')
+    sns.violinplot(x=df['Time interval [min]'], y=df['Imbalance [MW]'], hue=df['Scenario'], split=True)# palette='Set2')
     plt.xticks(rotation=45)
     plt.tight_layout()
     fig = plt.gcf()
-    save = False
+    save = True
     if save:
         fig.savefig(
             f'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Figures\\TimePlot_{area}_{year}.pdf',
             dpi=fig.dpi, pad_inches=0, bbox_inches='tight')
-    plt.show()
+    #plt.show()
     plt.clf()
 
 def year_comparison_table(area, scenario):
@@ -217,13 +217,23 @@ def map_plot(scenario, year):
     with open(f'{path}{scenario}_{year}.pickle', 'rb') as handle:
         dict_in = pkl.load(handle)
     imb = pd.DataFrame(columns=['Imbalance', 'id'] )
-    imb['Imbalance'] = [dict_in['High']['Pre-net imbalance'][a].abs().mean() for a in areas]
+    imb['Imbalance'] = [dict_in['High']['Netted imbalance'][a].abs().mean() for a in areas]
     imb['id'] = [a for a in areas]
 
-    transm = pd.DataFrame(columns=['Transmission', 'id'])
-    transm['Transmission'] = [(dict_in['High']['Netting transmission'][l] -
-                           dict_in['High']['Netting transmission'][lines[l]]).mean() for l in lines.keys()]
-    transm['id'] = [l for l in lines.keys()]
+    ntc = dict_in['Low']['NTC']
+    transmission = dict_in['High']['Post-net transmission']
+
+    transm = pd.DataFrame(columns=lines.keys())
+    for l in lines.keys():
+        transm[l] = transmission[l] - transmission[lines[l]]
+    congestion = pd.DataFrame(columns=['Congestion', 'id'])
+    congestion['id'] = [l for l in lines.keys()]
+    con_list = []
+    for l in lines.keys():
+        pos_con = transm.loc[transm[l] == ntc[l]].__len__()
+        neg_con = transm.loc[transm[l] == - ntc[lines[l]]].__len__()
+        con_list.append(100 * (pos_con + neg_con) / transm.__len__())
+    congestion['Congestion'] = con_list
 
     maps_in = gpd.read_file('C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\KTH\\Papers&Projects\\DynamicFRR\\nordic.geojson')
     maps_in = json.loads(maps_in.to_json())
@@ -239,7 +249,7 @@ def map_plot(scenario, year):
                        color='Imbalance',
                        hover_name='id',
                        color_continuous_scale=px.colors.sequential.Blues,
-                       range_color=[0, imb['Imbalance'].max()*1.1],
+                       range_color=[0, 800],
                        scope='europe')
     fig.update_geos(fitbounds="locations", visible=False)
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
@@ -251,57 +261,21 @@ def map_plot(scenario, year):
     fig.update_coloraxes(colorbar_tickfont_size=30)
     line_map = gpd.read_file('C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\KTH\\Papers&Projects\\J3 - Balancing analysis\\linemap.geojson')
 
-    print(transm)
-    for i in transm.index:
-        if transm['Transmission'][i] > 0:
-            lon1 = float(line_map.loc[line_map['id'] == f'{transm["id"][i]}_start']['geometry'].x)
-            lat1 = float(line_map.loc[line_map['id'] == f'{transm["id"][i]}_start']['geometry'].y)
-            lon2 = float(line_map.loc[line_map['id'] == f'{transm["id"][i]}_end']['geometry'].x)
-            lat2 = float(line_map.loc[line_map['id'] == f'{transm["id"][i]}_end']['geometry'].y)
-            if abs(lon1 - lon2) > abs(lat1 - lat2):
-                lat2 = lat1
-            else:
-                lon2 = lon1
+    for i in congestion.index:
+        lon1 = float(line_map.loc[line_map['id'] == f'{congestion["id"][i]}_start']['geometry'].x)
+        lat1 = float(line_map.loc[line_map['id'] == f'{congestion["id"][i]}_start']['geometry'].y)
+        lon2 = float(line_map.loc[line_map['id'] == f'{congestion["id"][i]}_end']['geometry'].x)
+        lat2 = float(line_map.loc[line_map['id'] == f'{congestion["id"][i]}_end']['geometry'].y)
+        if abs(lon1 - lon2) > abs(lat1 - lat2):
+            lat2 = lat1
         else:
-            lon1 = float(line_map.loc[line_map['id'] == f'{transm["id"][i]}_end']['geometry'].x)
-            lat1 = float(line_map.loc[line_map['id'] == f'{transm["id"][i]}_end']['geometry'].y)
-            lon2 = float(line_map.loc[line_map['id'] == f'{transm["id"][i]}_start']['geometry'].x)
-            lat2 = float(line_map.loc[line_map['id'] == f'{transm["id"][i]}_start']['geometry'].y)
-            if abs(lon1 - lon2) > abs(lat1 - lat2):
-                lat2 = lat1
-            else:
-                lon2 = lon1
+            lon2 = lon1
+
 
 
         fig.add_trace(go.Scattergeo(lat=[lat1, lat2], lon = [lon1, lon2], mode='lines',
-                                    line=dict(width=6, color='orange')))
-        l = 0.3  # the arrow length
-        widh = 0.2  # 2*widh is the width of the arrow base as triangle
-
-        A = np.array([lon1, lat1])
-        if lon2 > lon1:
-            B = np.array([lon2 + 0.2, lat2])
-        elif lon2 < lon1:
-            B = np.array([lon2 - 0.2, lat2])
-        elif lat2 > lat1:
-            B = np.array([lon2, lat2 + 0.2])
-        elif lat2 < lat1:
-            B = np.array([lon2, lat2 - 0.2])
-        v = B - A
-        w = v / np.linalg.norm(v)
-        u = np.array([-w[1], w[0]])  # u orthogonal on  w
-
-        P = B - l * w
-        S = P - widh * u
-        T = P + widh * u
-
-        fig.add_trace(go.Scattergeo(lon=[S[0], T[0], B[0], S[0]],
-                                    lat=[S[1], T[1], B[1], S[1]],
-                                    mode='lines',
-                                    fill='toself',
-                                    fillcolor='orange',
-                                    line_color='orange'))
+                                    line=dict(width=1 + congestion['Congestion'][i]/3, color='orange')))
     fig.show()
 
 for a in areas:
-    sensitivity_comparison(a)
+    time_plot(a, 2009)

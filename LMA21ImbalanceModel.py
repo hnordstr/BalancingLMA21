@@ -764,13 +764,13 @@ class Model:
         end = time.time()
         print(f'IMBALANCE NETTING COMPLETED IN {round(end - start, 3)} SECONDS')
         self.netted_imbalance = pd.DataFrame(columns=self.areas, index=self.timestamps_high_str)
-        self.ac_netting = pd.DataFrame(columns=self.areas, index=self.timestamps_high_str)
-        self.ac_post_high = pd.DataFrame(columns=self.areas, index=self.timestamps_high_str)
+        self.ac_netting = pd.DataFrame(columns=self.acindx, index=self.timestamps_high_str)
+        self.ac_post_high = pd.DataFrame(columns=self.acindx, index=self.timestamps_high_str)
         for a in self.areas:
             self.netted_imbalance[a] = imb_list[a]
         for l in self.acindx:
             self.ac_netting[l] = ac_list[l]
-            self.ac_post_high[l] = self.ac_pre_high[l] + self.ac_netting[l]
+            self.ac_post_high[l] = self.ac_pre_high[l] + self.ac_netting[l] - self.ac_netting[self.ac_pair[l]]
 
     def imbalance_filtering(self):
         self.slow_imbalance = pd.DataFrame(columns=self.areas, index=self.timestamps_high_str)
