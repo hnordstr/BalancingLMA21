@@ -860,33 +860,32 @@ class Model:
         if self.save:
             self.create_result_files()
 
+    def run_no_netting(self):
+        self.create_high_resolution()
+        self.compute_area_imbalance()
+        self.results = {}
+        self.results['High'] = {}
+        self.results['Low'] = {}
+        self.results['High']['Pre-net imbalance'] = self.imbalances
+        self.results['High']['Stochastic imbalance'] = self.stochastic_imbalances
+        self.results['High']['Deterministic imbalance'] = self.deterministic_imbalances
+        self.results['Low']['NTC'] = self.ntc
+        self.results['Low']['ATC'] = self.atc_low
+        self.results['Low']['HVDC'] = self.hvdc_low
+        self.results['Low']['Wind'] = self.wind_low
+        self.results['Low']['PV'] = self.pv_low
+        self.results['Low']['Consumption'] = self.consumption_low
+        self.results['Low']['Hydro'] = self.hydro_low
+        self.results['Low']['Thermal'] = self.thermal_low
+        self.results['Low']['Nuclear'] = self.nuclear_low
+        self.results['Low']['Flex'] = self.flex_low
+        with open(f'{self.path}{self.scenario}_{self.year}_Test.pickle', 'wb') as handle:
+            pkl.dump(self.results, handle, protocol=pkl.HIGHEST_PROTOCOL)
+
 
 m = Model(start_date='2009-01-01', scenario='EF45', simulated_days=52*7, save=True, quarters=False, fixed_ramp=False, trm=False)
 m.run()
 
-# df = pd.DataFrame(columns=['Demand', 'Wind', 'Hydro', 'PV'], index=list(range(1982, 2017)))
-# hydro_list = []
-# wind_list = []
-# demand_list = []
-# pv_list = []
-# se_areas = ['SE1', 'SE2', 'SE3', 'SE4']
-# for y in range(1982, 2017):
-#     m = Model(start_date=f'{y}-01-01', scenario='EF45', simulated_days=30, quarters=False, fixed_ramp=False, save=False, trm=False)
-#     m.setup_data()
-#     print(y)
-#     demand_list.append(sum(m.consumption_low[a].sum() for a in m.areas))
-#     wind_list.append(sum(m.wind_low[a].sum() for a in m.areas))
-#     hydro_list.append(sum(m.hydro_low[a].sum() for a in m.areas))
-#     pv_list.append(sum(m.pv_low[a].sum() for a in m.areas))
-# df['Demand'] = demand_list
-# df['Wind'] = wind_list
-# df['Hydro'] = hydro_list
-# df['PV'] = pv_list
-# axes = df.plot.bar(rot=45, subplots=True)
-# axes[0].axhline(y=df['Demand'].mean(), color='black')
-# axes[1].axhline(y=df['Wind'].mean(), color='black')
-# axes[2].axhline(y=df['Hydro'].mean(), color='black')
-# axes[3].axhline(y=df['PV'].mean(), color='black')
-# plt.show()
+
 
 

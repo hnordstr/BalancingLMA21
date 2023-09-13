@@ -113,7 +113,7 @@ class Wind_Model:
         a = area
         wind_in = self.wind[a]
         length = len(wind_in)
-        max_wind = wind_in.max() / 0.9
+        max_wind = wind_in.max() * 1.1
         rel_wind_in = wind_in / max_wind
         std = []
         for w in rel_wind_in.tolist():
@@ -147,7 +147,7 @@ class Wind_Model:
         rel_wind_in = pd.DataFrame(columns=self.areas)
 
         for a in self.areas:
-            max_wind[a][0] = wind_in[a].max() / 0.9
+            max_wind[a][0] = wind_in[a].max() * 1.1
             rel_wind_in[a] = wind_in[a] / max_wind[a][0]
             length = len(wind_in[a])
             rndm = []
@@ -182,14 +182,40 @@ class Wind_Model:
                           self.alpha[self.area_to_idx[a]] * simulated_error[i] + self.beta[self.area_to_idx[a]] * corr_rndms[a][i + 1] +
                           self.gamma[self.area_to_idx[a]] * corr_rndms[a][i])
                 simulated_error.append(max(err, wind_in[a][i] - max_wind[a][0]))
+                # simulated_error.append(self.alpha[self.area_to_idx[a]] * simulated_error[i] + self.beta[self.area_to_idx[a]] * corr_rndms[a][i + 1] +
+                #           self.gamma[self.area_to_idx[a]] * corr_rndms[a][i])
             self.sim_errors[a] = simulated_error[1:]
             self.sim_errors[a] = self.sim_errors[a] * (100 - self.improvement_percentage) / 100
             self.actual_hourly[a] = np.subtract(np.array(wind_in[a].tolist()), np.array(self.sim_errors[a].tolist()))
 
+    def energy_error(self, data):
+        x_ny = []
+        LD_ref = []
+        h = []
+        error = []
+        x_ny.extend(data)
+        LD_ref.extend(data)
+        HD = self.spline(x_ny)
+        for lowres_step in range(data.__len__()):
+            h.append(LD_ref[lowres_step] - sum(HD[int(lowres_step * 60):int((lowres_step + 1) * 60)]) / 60)
+            error.append(np.sqrt(h[lowres_step] ** 2))
+        error_new = sum(error)
+        error_old = np.infty
+        while error_old > error_new and error_new > 0.001 * data.__len__():
+            error_old = sum(error)
+            for i in range(int(data.__len__())):
+                x_ny[i] = x_ny[i] + h[i]
+            HD = self.spline(x_ny)
+            for i in range(int(data.__len__())):
+                h[i] = LD_ref[i] - sum(HD[int(i * 60): int((i + 1) * 60)]) / 60
+                error[i] = np.sqrt(h[i] ** 2)
+            error_new = sum(error)
+        if error_new > 0.1 * data.__len__():
+            print('!!!TP ENERGY ERROR OCCURRED!!!')
+            print(error_new)
+        return self.spline(x_ny)
 
-
-    def spline_hour_2_min(self, time, data):
-        """For hourly data"""
+    def spline(self, data):
         length = len(data)
         x_pts = []
         x_pts.append(0)
@@ -201,11 +227,17 @@ class Wind_Model:
         y_pts.extend(data)
         y_pts.append(data[length - 1] + (data[length - 1] - data[length - 2]) / 2)
         f = interpolate.CubicSpline(x_pts, y_pts)
-        wind_spline = f(x_vals)
+        new_list = f(x_vals)
+        return new_list
+
+
+    def spline_hour_2_min(self, time, data):
+        """For hourly data"""
+        wind_spline = self.energy_error(data)
         # Gör datumnkolumn med splines
         a = time[0]
         highres_time = []
-        for i in range(60 * length):
+        for i in range(60 * data.__len__()):
             highres_time.append(a + timedelta(minutes=i))
         wind_interpol = pd.DataFrame(columns=['Timestamp', 'Generation'])
         wind_interpol['Timestamp'] = highres_time
@@ -220,7 +252,7 @@ class Wind_Model:
         spline.loc[spline['Generation']<0, 'Generation'] = 0
         spline_list = spline[spline.index % 3 == 0]
         spline_list = spline_list['Generation'].tolist()
-        y_norm = spline['Generation'] / (data.max() / 0.9)
+        y_norm = spline['Generation'] / (data.max() * 1.1)
         y_norm = y_norm[y_norm.index % 3 ==0]
         y_norm = y_norm.tolist()
 
