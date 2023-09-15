@@ -824,6 +824,10 @@ class Model:
         self.results['High']['Deterministic imbalance'] = self.deterministic_imbalances
         self.results['High']['Netting transmission'] = self.ac_netting
         self.results['High']['Post-net transmission'] = self.ac_post_high
+        self.results['High']['Wind'] = self.wind_high
+        self.results['High']['Consumption'] = self.consumption_high
+        self.results['High']['PV'] = self.pv_high
+        self.results['High']['Hydro'] = self.hydro_high
         self.results['Low']['NTC'] = self.ntc
         self.results['Low']['ATC'] = self.atc_low
         self.results['Low']['HVDC'] = self.hvdc_low
@@ -883,7 +887,7 @@ class Model:
             pkl.dump(self.results, handle, protocol=pkl.HIGHEST_PROTOCOL)
 
 
-m = Model(start_date='2009-01-01', scenario='EF45', simulated_days=52*7, save=True, quarters=False, fixed_ramp=False, trm=False)
+m = Model(start_date='2009-01-01', scenario='EP45', simulated_days=52*7, save=True, quarters=False, fixed_ramp=False, trm=False)
 m.run()
 
 
