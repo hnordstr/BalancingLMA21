@@ -215,7 +215,7 @@ def year_comparison_pdf(area, scenario): #Not so good looking
     plt.show()
 
 def sensitivity_comparison(area):
-    df = pd.DataFrame(columns=['Absolute power imbalance [MW]', 'Case'])
+    df = pd.DataFrame(columns=['Absolute power \n imbalance [MW]', 'Case'])
     imb_list = []
     case_list = []
     for f in ['', '_FixRamp', '_TRM', '_ImprovedForecast']:
@@ -230,19 +230,20 @@ def sensitivity_comparison(area):
             case_list.extend('TRM' for n in range(dict_in['High']['Netted imbalance'].__len__()))
         elif f == '_ImprovedForecast':
             case_list.extend('Better forecast' for n in range(dict_in['High']['Netted imbalance'].__len__()))
-    df['Absolute power imbalance [MW]'] = imb_list
+    df['Absolute power \n imbalance [MW]'] = imb_list
     df['Case'] = case_list
-    plt.rcParams.update({'font.size': 12})
-    sns.boxenplot(data=df, x='Case', y='Absolute power imbalance [MW]')
+    plt.rcParams.update({'font.size': 20})
+    sns.boxenplot(data=df, x='Case', y='Absolute power \n imbalance [MW]')
     plt.grid(axis='y')
     plt.tight_layout()
     fig = plt.gcf()
+    fig.set_figwidth(14)
     save = True
     if save:
         fig.savefig(
             f'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Figures\\Sensitivity2_{area}.pdf',
             dpi=fig.dpi, pad_inches=0, bbox_inches='tight')
-    plt.clf()
+    plt.show()
 
 def map_plot(scenario, year):
     with open(f'{path}{scenario}_{year}.pickle', 'rb') as handle:
@@ -316,9 +317,9 @@ def wind_forecast():
     dict_in['Low'].index = pd.to_datetime(dict_in['Low'].index, utc=True, format='%Y-%m-%d %H:%M')
     actual = dict_in['Low']['Actual'][492:499]
     forecast = dict_in['Low']['Forecasted'][492:499]
-    plt.rcParams.update({'font.size': 14})
-    plt.step(actual.index, actual, where='post', label='Actual generation', linewidth=2)
-    plt.step(forecast.index, forecast, where='post', label='Forecasted generation', linewidth=2)
+    plt.rcParams.update({'font.size': 20})
+    plt.step(actual.index, actual, where='post', label='Actual generation', linewidth=4)
+    plt.step(forecast.index, forecast, where='post', label='Forecasted generation', linewidth=4)
     plt.fill_between(actual.index, forecast, actual, step='post', alpha=0.4,
                      color='grey')
     myFmt = DateFormatter("%H:%M")
@@ -330,7 +331,7 @@ def wind_forecast():
     plt.ylabel('Energy [MWh/h]')
     plt.tight_layout()
     fig = plt.gcf()
-    fig.set_figwidth(10)
+    fig.set_figwidth(12)
     save = True
     if save:
         fig.savefig(
@@ -349,9 +350,9 @@ def wind_variability():
     high = dict_in['High'][480 * 60:486 * 60]
     act_new = pd.DataFrame(columns=['Gen'], index=high.index)
     act_new['Gen'] = [actual[n] for n in range(6) for x in range(60)]
-    plt.rcParams.update({'font.size': 14})
-    plt.plot(act_new.index, act_new['Gen'], label='TP-resolution', linewidth=2)
-    plt.plot(high.index, high, label='1-minute resolution', linewidth=2)
+    plt.rcParams.update({'font.size': 20})
+    plt.plot(act_new.index, act_new['Gen'], label='Actual TP generation', linewidth=4)
+    plt.plot(high.index, high, label='Actual 1-minute generation', linewidth=4)
     plt.fill_between(act_new.index, act_new['Gen'], high, alpha=0.4,
                      color='grey')
     myFmt = DateFormatter("%H:%M")
@@ -363,7 +364,7 @@ def wind_variability():
     plt.ylabel('Power [MW]')
     plt.tight_layout()
     fig = plt.gcf()
-    fig.set_figwidth(10)
+    fig.set_figwidth(12)
     save = True
     if save:
         fig.savefig(
@@ -380,9 +381,9 @@ def hvdc_ramping():
     high = dict_in['High']['GBNO2'][264*60:270*60]
     act_new = pd.DataFrame(columns=['Gen'], index=high.index)
     act_new['Gen'] = [actual[n] for n in range(6) for x in range(60)]
-    plt.rcParams.update({'font.size': 14})
-    plt.plot(act_new.index, act_new['Gen'], label='TP-resolution', linewidth=2)
-    plt.plot(high.index, high, label='1-minute resolution', linewidth=2)
+    plt.rcParams.update({'font.size': 20})
+    plt.plot(act_new.index, act_new['Gen'], label='Actual TP transmission', linewidth=4)
+    plt.plot(high.index, high, label='Actual 1-minute transmission', linewidth=4)
     plt.fill_between(act_new.index, act_new['Gen'], high, alpha=0.4,
                      color='grey')
     myFmt = DateFormatter("%H:%M")
@@ -394,7 +395,7 @@ def hvdc_ramping():
     plt.ylabel('Power [MW]')
     plt.tight_layout()
     fig = plt.gcf()
-    fig.set_figwidth(10)
+    fig.set_figwidth(12)
     save = True
     if save:
         fig.savefig(
@@ -411,9 +412,9 @@ def netting_plot(scenario, area):
     # pre_net = dict_in['High']['Pre-net imbalance'][area][:30*24*60]
     post_net.index = pd.to_datetime(post_net.index, utc=True, format='%Y-%m-%d %H:%M')
     pre_net.index = pd.to_datetime(pre_net.index, utc=True, format='%Y-%m-%d %H:%M')
-    plt.rcParams.update({'font.size': 14})
-    plt.plot(post_net,label='Post-netting', linewidth=2)
-    plt.plot(pre_net, label='Pre-netting', linewidth=2, linestyle='--')
+    plt.rcParams.update({'font.size': 20})
+    plt.plot(post_net,label='Post-netting', linewidth=4)
+    plt.plot(pre_net, label='Pre-netting', linewidth=4, linestyle='--')
     plt.fill_between(pre_net.index, pre_net, post_net, alpha=0.4,
                      color='grey')
     myFmt = DateFormatter("%H:%M")
@@ -425,7 +426,7 @@ def netting_plot(scenario, area):
     plt.ylabel('Power imbalance [MW]')
     plt.tight_layout()
     fig = plt.gcf()
-    fig.set_figwidth(10)
+    fig.set_figwidth(12)
     save = True
     if save:
         fig.savefig(
@@ -434,7 +435,7 @@ def netting_plot(scenario, area):
     plt.show()
 
 def duration_plot_2(area, year):
-    plt.rcParams.update({'font.size': 14})
+    plt.rcParams.update({'font.size': 20})
     data_dict = {}
     zero_max = 0
     with open(f'{path}EF45_{year}.pickle', 'rb') as handle:
@@ -442,24 +443,24 @@ def duration_plot_2(area, year):
     df = pd.DataFrame(columns=['Positive post', 'Positive pre',  'Negative pre',  'Negative post', 'Interval', 'Duration', 'Percentage'])
     imb_net = dict_in['High']['Netted imbalance'][area]
     imb_pre = dict_in['High']['Pre-net imbalance'][area]
-    atc = dict_in['Low']['ATC']
-    area_atc = pd.DataFrame(columns=['Export', 'Import', 'Interval', 'Duration', 'Percentage'])
-    export_cap = pd.DataFrame(columns=['value'], index=atc.index)
-    import_cap = pd.DataFrame(columns=['value'], index=atc.index)
-    import_cap['value'] = [0 for i in range(atc.__len__())]
-    export_cap['value'] = [0 for i in range(atc.__len__())]
-    for l in ac_unidir:
-        if l[1] == area:
-            import_cap['value'] = import_cap['value'] + atc[l[0]]
-        elif l[2] == area:
-            export_cap['value'] = export_cap['value'] + atc[l[0]]
-    import_cap = import_cap.sort_values(by=['value'], ascending=False)
-    export_cap = export_cap.sort_values(by=['value'], ascending=False)
-    area_atc['Export'] = export_cap['value'].tolist()
-    area_atc['Import'] = import_cap['value'].tolist()
-    area_atc['Interval'] = [1 for i in range(import_cap.__len__())]
-    area_atc['Duration'] = area_atc['Interval'].cumsum()
-    area_atc['Percentage'] = area_atc['Duration'] * 100 / import_cap.__len__()
+    # atc = dict_in['Low']['ATC']
+    # area_atc = pd.DataFrame(columns=['Export', 'Import', 'Interval', 'Duration', 'Percentage'])
+    # export_cap = pd.DataFrame(columns=['value'], index=atc.index)
+    # import_cap = pd.DataFrame(columns=['value'], index=atc.index)
+    # import_cap['value'] = [0 for i in range(atc.__len__())]
+    # export_cap['value'] = [0 for i in range(atc.__len__())]
+    # for l in ac_unidir:
+    #     if l[1] == area:
+    #         import_cap['value'] = import_cap['value'] + atc[l[0]]
+    #     elif l[2] == area:
+    #         export_cap['value'] = export_cap['value'] + atc[l[0]]
+    # import_cap = import_cap.sort_values(by=['value'], ascending=False)
+    # export_cap = export_cap.sort_values(by=['value'], ascending=False)
+    # area_atc['Export'] = export_cap['value'].tolist()
+    # area_atc['Import'] = import_cap['value'].tolist()
+    # area_atc['Interval'] = [1 for i in range(import_cap.__len__())]
+    # area_atc['Duration'] = area_atc['Interval'].cumsum()
+    # area_atc['Percentage'] = area_atc['Duration'] * 100 / import_cap.__len__()
 
     imb_net_pos = imb_net
     imb_net_neg = -imb_net
@@ -485,30 +486,30 @@ def duration_plot_2(area, year):
     fig, ax1 = plt.subplots()
 
     ax1.plot(df['Percentage'].tolist(), df['Positive post'].tolist(),
-             label='Positive post-netting', linewidth=3, color='C0')
+             label='Positive post-netting', linewidth=4, color='C0')
     ax1.plot(df['Percentage'].tolist(), df['Negative post'].tolist(),
-             label='Negative post-netting', linewidth=3, color='C1')
+             label='Negative post-netting', linewidth=4, color='C1')
     ax1.plot(df['Percentage'].tolist(), df['Positive pre'].tolist(),
-             label='Positive pre-netting', linewidth=3, ls='--', color='C0')
+             label='Positive pre-netting', linewidth=4, ls='--', color='C0')
     ax1.plot(df['Percentage'].tolist(), df['Negative pre'].tolist(),
-             label='Negative pre-netting', linewidth=3, ls='--', color='C1')
+             label='Negative pre-netting', linewidth=4, ls='--', color='C1')
     ax1.set_ylabel('Power imbalance [MW]')
     ax1.set_xlabel('Share of time [%]')
     ax1.set_xlim(-1, 101)
 
-    ax2 = ax1.twinx()
-
-
-    ax2.plot(area_atc['Percentage'].tolist(), area_atc['Export'].tolist(),
-             label='Available AC export capacity', linewidth=3, color='black')
-    ax2.plot(area_atc['Percentage'].tolist(), area_atc['Import'].tolist(),
-             label='Available AC import capacity', linewidth=3, ls='--', color='black')
-    ax2.set_ylabel('Available transmission capacity [MW]')
+    # ax2 = ax1.twinx()
+    #
+    #
+    # ax2.plot(area_atc['Percentage'].tolist(), area_atc['Export'].tolist(),
+    #          label='Available AC export capacity', linewidth=3, color='black')
+    # ax2.plot(area_atc['Percentage'].tolist(), area_atc['Import'].tolist(),
+    #          label='Available AC import capacity', linewidth=3, ls='--', color='black')
+    # ax2.set_ylabel('Available transmission capacity [MW]')
 
     plt.grid()
-    fig.legend(loc='upper center')
+    ax1.legend()
     fig.tight_layout()
-    fig.set_figwidth(10)
+    fig.set_figwidth(12)
     fig = plt.gcf()
     save = True
     if save:
@@ -548,7 +549,7 @@ def violin_plot(area, year):
     intervals = [f'{int(i * 10)}-{int((i + 1) * 10)}' for i in range(6)]
     start = [int(i * 10) for i in range(6)]
     end= [int((i + 1) * 10) for i in range(6)]
-    df = pd.DataFrame(columns=['Absolute power imbalance [MW]', 'Time interval [min]'])
+    df = pd.DataFrame(columns=['Absolute power \n imbalance [MW]', 'Time interval [min]'])
     imb_list = []
     time_list = []
     with open(f'{path}EF45_{year}.pickle', 'rb') as handle:
@@ -564,24 +565,25 @@ def violin_plot(area, year):
         lst.sort(reverse=True)
         imb_list.extend(lst[:500])
         time_list.extend(intervals[i] for n in range(500))
-    df['Absolute power imbalance [MW]'] = imb_list
+    df['Absolute power \n imbalance [MW]'] = imb_list
     df['Time interval [min]'] = time_list
-    plt.rcParams.update({'font.size': 12})
+    plt.rcParams.update({'font.size': 20})
     plt.grid()
-    sns.violinplot(x=df['Time interval [min]'], y=df['Absolute power imbalance [MW]'], color='C0')# palette='Set2')
+    sns.violinplot(x=df['Time interval [min]'], y=df['Absolute power \n imbalance [MW]'], color='C0')# palette='Set2')
     plt.xticks(rotation=45)
     plt.tight_layout()
     fig = plt.gcf()
+    fig.set_figwidth(12)
     save = True
     if save:
         fig.savefig(
             f'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Figures\\ViolinPlot_{area}_{year}.pdf',
             dpi=fig.dpi, pad_inches=0, bbox_inches='tight')
-    #plt.show()
-    plt.clf()
+    plt.show()
+    #plt.clf()
 
 def delta_time_duration(area, year):
-    plt.rcParams.update({'font.size': 14})
+    plt.rcParams.update({'font.size': 20})
     with open(f'{path}EF45_{year}.pickle', 'rb') as handle:
         dict_in = pkl.load(handle)
     imb = dict_in['High']['Netted imbalance'][area]
@@ -605,16 +607,16 @@ def delta_time_duration(area, year):
     df['Percentage'] = df['Duration'] * 100 / one_min_sorted.__len__()
     # myFmt = DateFormatter("%m-%d %H:%M")
     # plt.gca().xaxis.set_major_formatter(myFmt)
-    plt.plot(df['Percentage'].tolist(), df['1 min'].tolist(), label='1 min derivative', linewidth=2)
-    plt.plot(df['Percentage'].tolist(), df['5 min'].tolist(), label='5 min derivative', linewidth=2)
+    plt.plot(df['Percentage'].tolist(), df['1 min'].tolist(), label='1 min derivative', linewidth=4)
+    plt.plot(df['Percentage'].tolist(), df['5 min'].tolist(), label='5 min derivative', linewidth=4)
     plt.xlabel('Share of time [%]')
-    plt.ylabel('Absolute power imbalance derivative [MW/min]')
+    plt.ylabel('Absolute power imbalance \n derivative [MW/min]')
     plt.xlim(-1, 20)
     plt.grid()
     plt.legend()
     plt.tight_layout()
     fig = plt.gcf()
-    fig.set_figwidth(10)
+    fig.set_figwidth(12)
     save = True
     if save:
         fig.savefig(
@@ -677,7 +679,7 @@ def delta_time_analysis(area, year):
     plt.show()
 
 def duration_plot_3(area):
-    plt.rcParams.update({'font.size': 12})
+    plt.rcParams.update({'font.size': 20})
     for s in ['EF45', 'EP45']:
         with open(f'{path}{s}_2009.pickle', 'rb') as handle:
             dict_in = pkl.load(handle)
@@ -696,27 +698,65 @@ def duration_plot_3(area):
         df['Percentage'] = df['Duration'] * 100 / imb.__len__()
         if s == 'EF45':
             plt.plot(df['Percentage'].tolist(), df['Positive imbalance'].tolist(),
-                    label=f'Positive imbalance {scenario_dict[s]}', linewidth=2, color='C0')
+                    label=f'Positive imbalance {scenario_dict[s]}', linewidth=4, color='C0')
             plt.plot(df['Percentage'].tolist(), df['Negative imbalance'].tolist(),
-                    label=f'Negative imbalance {scenario_dict[s]}', linewidth=2, color='C1')
+                    label=f'Negative imbalance {scenario_dict[s]}', linewidth=4, color='C1')
         elif s =='EP45':
             plt.plot(df['Percentage'].tolist(), df['Positive imbalance'].tolist(),
-                    label=f'Positive imbalance {scenario_dict[s]}', linewidth=2, color='C0', linestyle='--')
+                    label=f'Positive imbalance {scenario_dict[s]}', linewidth=4, color='C0', linestyle='--')
             plt.plot(df['Percentage'].tolist(), df['Negative imbalance'].tolist(),
-                    label=f'Negative imbalance {scenario_dict[s]}', linewidth=2, color='C1', linestyle='--')
+                    label=f'Negative imbalance {scenario_dict[s]}', linewidth=4, color='C1', linestyle='--')
     plt.ylabel('Power imbalance [MW]')
     plt.xlabel('Share of time [%]')
-    plt.xlim(-1, 50)
+    plt.xlim(-1, 40)
     plt.grid()
     plt.legend()
     plt.tight_layout()
     fig = plt.gcf()
+    fig.set_figwidth(12)
     save = True
     if save:
         fig.savefig(
             f'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Figures\\ScenarioComparison_{area}.pdf',
             dpi=fig.dpi, pad_inches=0, bbox_inches='tight')
-    #plt.show()
-    plt.clf()
+    plt.show()
 
-netting_plot('EF45', 'SE1')
+def no_forecast_plot(area):
+    plt.rcParams.update({'font.size': 20})
+    for n in ['', '_NoForecast', '_NoDemandForecast']:
+        with open(f'{path}EF45_2009{n}.pickle', 'rb') as handle:
+            dict_in = pkl.load(handle)
+        df = pd.DataFrame(columns=['Imbalance', 'Interval', 'Duration', 'Percentage'])
+        imb = dict_in['High']['Netted imbalance'][area]
+        imb = imb.abs()
+        imb = imb.sort_values(ascending=False)
+        df['Imbalance'] = imb.tolist()
+        df['Interval'] = [1 for i in range(imb.__len__())]
+        df['Duration'] = df['Interval'].cumsum()
+        df['Percentage'] = df['Duration'] * 100 / imb.__len__()
+        if n == '':
+            plt.plot(df['Percentage'].tolist(), df['Imbalance'].tolist(),
+                     label=f'With forecast errors', linewidth=4, color='C1')
+        elif n == '_NoForecast':
+            plt.plot(df['Percentage'].tolist(), df['Imbalance'].tolist(),
+                     label=f'No forecast errors', linewidth=4, color='C0')
+        elif n == '_NoDemandForecast':
+            plt.plot(df['Percentage'].tolist(), df['Imbalance'].tolist(),
+                     label=f'No demand forecast errors', linewidth=4, color='C2')
+    plt.ylabel('Absolute power \n imbalance [MW]')
+    plt.xlabel('Share of time [%]')
+    plt.xlim(-1, 60)
+    plt.grid()
+    plt.legend()
+    plt.tight_layout()
+    fig = plt.gcf()
+    fig.set_figwidth(12)
+    save = True
+    if save:
+        fig.savefig(
+            f'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Figures\\ForecastComparison_{area}.pdf',
+            dpi=fig.dpi, pad_inches=0, bbox_inches='tight')
+    plt.show()
+
+
+sensitivity_comparison('SE1')
