@@ -38,8 +38,6 @@ class GurobiModel:
 
         ###VARIABLES###
         self.var_AC = self.gm.addVars(self.set_ACINDX, self.set_TIME, name='AC', vtype=GRB.CONTINUOUS, lb=0, ub=float('inf'))
-        # self.var_ACDIFFPOS = self.gm.addVars(self.set_ACINDX, self.set_INTERVALS, name='ACDIFFPOS', vtype=GRB.CONTINUOUS, lb=0, ub=float('inf'))
-        # self.var_ACDIFFNEG = self.gm.addVars(self.set_ACINDX, self.set_INTERVALS, name='ACDIFFNEG', vtype=GRB.CONTINUOUS, lb=0, ub=float('inf'))
         self.var_IMBDIFFPOS = self.gm.addVars(self.set_AREAS, self.set_INTERVALS, name='IMBDIFFPOS', vtype=GRB.CONTINUOUS, lb=0, ub=float('inf'))
         self.var_IMBDIFFNEG = self.gm.addVars(self.set_AREAS, self.set_INTERVALS, name='IMBDIFFNEG', vtype=GRB.CONTINUOUS, lb=0, ub=float('inf'))
         self.var_BALANCINGUP = self.gm.addVars(self.set_AREAS, self.set_TIME, name='BALANCINGUP', vtype=GRB.CONTINUOUS, lb=0, ub=float('inf'))

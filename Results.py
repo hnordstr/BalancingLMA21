@@ -372,6 +372,39 @@ def wind_variability():
             dpi=fig.dpi, pad_inches=0, bbox_inches='tight')
     plt.show()
 
+def sni():
+    with open(f'{path}_Wind.pickle', 'rb') as handle:
+        dict_in = pkl.load(handle)
+    start = datetime.strptime('2009-01-21 00:00', '%Y-%m-%d %H:%M')
+    end = datetime.strptime('2009-01-22 00:00', '%Y-%m-%d %H:%M')
+    dict_in['Low'].index = pd.to_datetime(dict_in['Low'].index, utc=True, format='%Y-%m-%d %H:%M')
+    dict_in['High'].index = pd.to_datetime(dict_in['High'].index, utc=True, format='%Y-%m-%d %H:%M')
+    actual = dict_in['Low']['Forecasted'][480:486]
+    high = dict_in['High'][480 * 60:486 * 60]
+    act_new = pd.DataFrame(columns=['Gen'], index=high.index)
+    act_new['Gen'] = [actual[n] for n in range(6) for x in range(60)]
+    plt.rcParams.update({'font.size': 20})
+    plt.plot(act_new.index, act_new['Gen'], label='Forecasted TP generation', linewidth=4)
+    plt.plot(high.index, high, label='Actual 1-minute generation', linewidth=4)
+    plt.fill_between(act_new.index, act_new['Gen'], high, alpha=0.4,
+                     color='grey')
+    myFmt = DateFormatter("%H:%M")
+    plt.gca().xaxis.set_major_formatter(myFmt)
+    plt.xticks(rotation=45)
+    plt.grid()
+    plt.legend()
+    plt.xlabel('Time')
+    plt.ylabel('Power [MW]')
+    plt.tight_layout()
+    fig = plt.gcf()
+    fig.set_figwidth(12)
+    save = True
+    if save:
+        fig.savefig(
+            f'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Figures\\SNI.pdf',
+            dpi=fig.dpi, pad_inches=0, bbox_inches='tight')
+    plt.show()
+
 def hvdc_ramping():
     with open(f'{path}_HVDC.pickle', 'rb') as handle:
         dict_in = pkl.load(handle)
@@ -758,5 +791,38 @@ def no_forecast_plot(area):
             dpi=fig.dpi, pad_inches=0, bbox_inches='tight')
     plt.show()
 
+def services_plot(area):
+    with open(f'{path}EF45_2009.pickle', 'rb') as handle:
+        dict_in = pkl.load(handle)
+    fcr = dict_in['High']['FCR imbalance']
+    afrr = dict_in['High']['Fast imbalance']
+    mfrr = dict_in['High']['Slow imbalance']
+    imbalance = dict_in['High']['Netted imbalance']
+    fcr.index = pd.to_datetime(fcr.index, utc=True, format='%Y-%m-%d %H:%M')
+    afrr.index = pd.to_datetime(afrr.index, utc=True, format='%Y-%m-%d %H:%M')
+    mfrr.index = pd.to_datetime(mfrr.index, utc=True, format='%Y-%m-%d %H:%M')
+    imbalance.index = pd.to_datetime(imbalance.index, utc=True, format='%Y-%m-%d %H:%M')
+    plt.rcParams.update({'font.size': 16})
+    plt.plot(fcr.index[20*60:24*60], -fcr[area][20*60:24*60],label='FCR activation')
+    plt.plot(afrr.index[20*60:24*60], -afrr[area][20*60:24*60], label='aFRR activation')
+    plt.plot(mfrr.index[20*60:24*60], -mfrr[area][20*60:24*60], label='mFRR activation')
+    plt.plot(imbalance.index[20 * 60:24 * 60], imbalance[area][20 * 60:24 * 60], label='Total imbalance')
+    myFmt = DateFormatter("%H:%M")
+    plt.gca().xaxis.set_major_formatter(myFmt)
+    plt.xticks(rotation=45)
+    plt.grid()
+    plt.legend()
+    plt.tight_layout()
+    plt.xlabel('Time')
+    plt.ylabel('Power [MW]')
+    fig = plt.gcf()
+    fig.set_figwidth(12)
+    save = True
+    if save:
+        fig.savefig(
+            f'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Figures\\Services.pdf',
+            dpi=fig.dpi, pad_inches=0, bbox_inches='tight')
+    plt.show()
 
-sensitivity_comparison('SE1')
+services_plot('SE3')
+
