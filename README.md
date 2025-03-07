@@ -1,5 +1,14 @@
 These are the file for tuning and running PIM, where LMA21ImbalanceModel is the main model.
 
+The following scripts must be used to run the main model:
+
+- LMA21ImbalanceModel
+- Gurobi_Model
+- RESshares
+- WindModel
+- SolarModel
+- DemandModel
+
 To run the model, correct data paths must be customized for reading and storing data in the LMA21ImbalanceModel.
 
 Also, correct cmatrix paths must be defined within the WindModel, SolarModel and DemandModel.
