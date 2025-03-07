@@ -215,13 +215,14 @@ def year_comparison_pdf(area, scenario): #Not so good looking
     plt.show()
 
 def sensitivity_comparison(area):
-    df = pd.DataFrame(columns=['Absolute power \n imbalance [MW]', 'Case'])
+    df = pd.DataFrame(columns=['Power imbalance [MW]', 'Case'])
     imb_list = []
     case_list = []
     for f in ['', '_FixRamp', '_TRM', '_ImprovedForecast']:
         with open(f'{path}EF45_2009{f}.pickle', 'rb') as handle:
             dict_in = pkl.load(handle)
-        imb_list.extend(dict_in['High']['Netted imbalance'][area].abs().tolist())
+        #imb_list.extend(dict_in['High']['Netted imbalance'][area].abs().tolist())
+        imb_list.extend(dict_in['High']['Netted imbalance'][area].tolist())
         if f == '':
             case_list.extend('Base' for n in range(dict_in['High']['Netted imbalance'].__len__()))
         elif f == '_FixRamp':
@@ -230,15 +231,16 @@ def sensitivity_comparison(area):
             case_list.extend('TRM' for n in range(dict_in['High']['Netted imbalance'].__len__()))
         elif f == '_ImprovedForecast':
             case_list.extend('Better forecast' for n in range(dict_in['High']['Netted imbalance'].__len__()))
-    df['Absolute power \n imbalance [MW]'] = imb_list
+    df['Power imbalance [MW]'] = imb_list
     df['Case'] = case_list
-    plt.rcParams.update({'font.size': 20})
-    sns.boxenplot(data=df, x='Case', y='Absolute power \n imbalance [MW]')
-    plt.grid(axis='y')
+    plt.rcParams.update({'font.size': 22})
+    #plt.grid(axis='y')
+    sns.boxenplot(data=df, x='Case', y='Power imbalance [MW]', width=0.8, showfliers=False, k_depth='proportion', outlier_prop=0.005, linewidth=2)
     plt.tight_layout()
     fig = plt.gcf()
     fig.set_figwidth(14)
     save = True
+    # plt.grid()
     if save:
         fig.savefig(
             f'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Figures\\Sensitivity2_{area}.pdf',
@@ -468,7 +470,7 @@ def netting_plot(scenario, area):
     plt.show()
 
 def duration_plot_2(area, year):
-    plt.rcParams.update({'font.size': 20})
+    plt.rcParams.update({'font.size': 22})
     data_dict = {}
     zero_max = 0
     with open(f'{path}EF45_{year}.pickle', 'rb') as handle:
@@ -528,7 +530,7 @@ def duration_plot_2(area, year):
              label='Negative pre-netting', linewidth=4, ls='--', color='C1')
     ax1.set_ylabel('Power imbalance [MW]')
     ax1.set_xlabel('Share of time [%]')
-    ax1.set_xlim(-1, 101)
+    ax1.set_xlim(-1, 61)
 
     # ax2 = ax1.twinx()
     #
@@ -596,13 +598,13 @@ def violin_plot(area, year):
         for h in hours:
             lst.extend(imb[h * 60 + start[i]: h * 60 + end[i]])
         lst.sort(reverse=True)
-        imb_list.extend(lst[:500])
-        time_list.extend(intervals[i] for n in range(500))
+        imb_list.extend(lst[:200])
+        time_list.extend(intervals[i] for n in range(200))
     df['Absolute power \n imbalance [MW]'] = imb_list
     df['Time interval [min]'] = time_list
-    plt.rcParams.update({'font.size': 20})
+    plt.rcParams.update({'font.size': 22})
     plt.grid()
-    sns.violinplot(x=df['Time interval [min]'], y=df['Absolute power \n imbalance [MW]'], color='C0')# palette='Set2')
+    sns.stripplot(x=df['Time interval [min]'], y=df['Absolute power \n imbalance [MW]'], color='C0', alpha=0.3,linewidth=1, s=8)# palette='Set2')
     plt.xticks(rotation=45)
     plt.tight_layout()
     fig = plt.gcf()
@@ -610,13 +612,13 @@ def violin_plot(area, year):
     save = True
     if save:
         fig.savefig(
-            f'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Figures\\ViolinPlot_{area}_{year}.pdf',
+            f'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Figures\\StripPlot_{area}_{year}.pdf',
             dpi=fig.dpi, pad_inches=0, bbox_inches='tight')
     plt.show()
     #plt.clf()
 
 def delta_time_duration(area, year):
-    plt.rcParams.update({'font.size': 20})
+    plt.rcParams.update({'font.size': 22})
     with open(f'{path}EF45_{year}.pickle', 'rb') as handle:
         dict_in = pkl.load(handle)
     imb = dict_in['High']['Netted imbalance'][area]
@@ -653,7 +655,7 @@ def delta_time_duration(area, year):
     save = True
     if save:
         fig.savefig(
-            f'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Figures\\DeltaDuration.pdf',
+            f'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Figures\\DeltaDuration_{area}.pdf',
             dpi=fig.dpi, pad_inches=0, bbox_inches='tight')
     plt.show()
 
@@ -712,7 +714,7 @@ def delta_time_analysis(area, year):
     plt.show()
 
 def duration_plot_3(area):
-    plt.rcParams.update({'font.size': 20})
+    plt.rcParams.update({'font.size': 22})
     for s in ['EF45', 'EP45']:
         with open(f'{path}{s}_2009.pickle', 'rb') as handle:
             dict_in = pkl.load(handle)
@@ -755,7 +757,7 @@ def duration_plot_3(area):
     plt.show()
 
 def no_forecast_plot(area):
-    plt.rcParams.update({'font.size': 20})
+    plt.rcParams.update({'font.size': 22})
     for n in ['', '_NoForecast', '_NoDemandForecast']:
         with open(f'{path}EF45_2009{n}.pickle', 'rb') as handle:
             dict_in = pkl.load(handle)
@@ -775,7 +777,7 @@ def no_forecast_plot(area):
                      label=f'No forecast errors', linewidth=4, color='C0')
         elif n == '_NoDemandForecast':
             plt.plot(df['Percentage'].tolist(), df['Imbalance'].tolist(),
-                     label=f'No demand forecast errors', linewidth=4, color='C2')
+                     label=f'No demand forecast errors', linewidth=4, color='C2', linestyle='--')
     plt.ylabel('Absolute power \n imbalance [MW]')
     plt.xlabel('Share of time [%]')
     plt.xlim(-1, 60)
@@ -822,7 +824,9 @@ def services_plot(area):
         fig.savefig(
             f'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Figures\\Services.pdf',
             dpi=fig.dpi, pad_inches=0, bbox_inches='tight')
-    plt.show()
+    #plt.show()
 
-services_plot('SE3')
+areas_study = ['SE1', 'SE4', 'NO2', 'FI']
+for a in areas_study:
+    sensitivity_comparison(a)
 

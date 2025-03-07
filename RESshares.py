@@ -201,9 +201,9 @@ def res_split(data, year=2016, days=52*7, scenario='EF45'):
     # MAF PECD 2019 data is read. Perhaps could use CorRes time series instead. But likely not too large difference
     gen_dict = {}
 
-    with open('C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Simuleringsdata\\ERAA_22\\PECD-MAF2019-Nordic.pickle','rb') as handle:
-        maf_data = pkl.load(handle)
-
+    # with open('C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Simuleringsdata\\ERAA_22\\PECD-MAF2019-Nordic.pickle','rb') as handle:
+    #     maf_data = pkl.load(handle)
+    maf_data = pd.read_pickle('C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Simuleringsdata\\ERAA_22\\PECD-MAF2019-Nordic.pickle')
 
     # Create one dataframe per MAF area
     maf_dict = {}

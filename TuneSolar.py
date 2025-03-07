@@ -620,8 +620,7 @@ class Solar_Model_Tuning:
         print(f'Simulated: {100 * ar.abs().sum()/sum(spline_list)} %')
 
 m = Solar_Model_Tuning(scenario='FM45')
-m.read_data()
-m.variability_simulation('FI')
+m.tune_multiarea_arma_model()
 
         # Create minute resolution data by linear interpolation of 3_minute resolution data
         # minute_highfreq = []

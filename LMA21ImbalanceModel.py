@@ -19,16 +19,18 @@ import pickle as pkl
 
 class Model:
     def __init__(self, name='Model', scenario='EF45', start_date='2010-01-01',
-                 simulated_days=52*7, save=False, quarters=False, fixed_ramp=False, trm=False):
+                 simulated_days=52*7, save=False, quarters=False, fixed_ramp=False, trm=False, forecast_improvement=0):
         """"
-        Here the setup of the model is done. One can choose between  having fast ramps and quarter-hourly markets.
-        The start date should be set as yy-mm-dd. Data available for 1982-2016. Scenarios are SF45, EF45, EP45 and FM45.
-        The number of simulated days must be set. Data is available 01/01 to 30/12 for all years, excluding leap days.
-        IMPORTANT: Model cannot be run over consecutive years!!!
-        Path should be set to folder were results should be saved.
-        If results are to be saved, save parameter should be true.
-        Potentially allow for running lower resolution than one minute?
-        Netting as an option?
+        argument description:
+        name: optional name,
+        scenario: EF45, EP45, FM45 or SF45. Svk's LMA21 scenarios for 2021
+        start_date: 'yyyy-mm-dd'. can be any date between 1982-2016 (LMA weather years)
+        simulated_days: integer. number of days to be simulated. note that the model cannot simulate time series that lap over different years.
+        save: boolean. Should the results be stored or not (must define path where to store in __init__
+        quarters: boolean. should the model create quarter-hourly data to base the imbalance derivation from
+        fixed_ramp: boolean. If true, all controllable components ramp in 20 min period around TP shift (5 min if quarters=True). If false, components ramp as fast as technically possible
+        trm: boolean. If true, transmission reliability margin is used in imbalance netting. If false, only NTC used in imbalance netting
+        forecast_improvemennt: float. Perecentual forecast improvement. If this is zero, the model generates forecasts that have the same relative size as today's forecast errors.
         """
         self.start_date = datetime.strptime(start_date, '%Y-%m-%d')
         self.year = self.start_date.year
@@ -50,6 +52,7 @@ class Model:
         self.trm = trm
         self.lowres = 60
         self.highres = 1
+        self.forecast_improvement = forecast_improvement
         self.days = simulated_days
         self.timestamps = [self.start_date + timedelta(hours=24*d + h) for d in range(self.days) for h in range(24)]
         if calendar.isleap(self.year) and self.days > 31 + 28:
@@ -462,7 +465,7 @@ class Model:
 
     def varying_simulation(self):
         wind_model = Wind_Model(wind_in=self.wind_low, scenario=self.scenario, year_start=self.year,
-                                sim_days=self.days, improvement_percentage=20)
+                                sim_days=self.days, improvement_percentage=self.forecast_improvement)
         print('RUNNING WIND POWER SIMULATION')
         wind_model.make_multi_area_highres_scenario()
 
@@ -474,7 +477,7 @@ class Model:
             self.wind_actual_low[area] = self.wind_actual[area]['Hourly']['Actual'].tolist()
 
         pv_model = Solar_Model(pv_in=self.pv_low, scenario=self.scenario, year_start=self.year,
-                                sim_days=self.days, improvement_percentage=20)
+                                sim_days=self.days, improvement_percentage=self.forecast_improvement)
         print('RUNNING SOLAR POWER SIMULATION')
         pv_model.make_multi_area_highres_scenario()
         self.pv_actual = pv_model.dict
@@ -489,7 +492,7 @@ class Model:
                 self.pv_actual_low[area] = self.pv_actual[area]['Hourly']['Actual'].tolist()
 
         demand_model = Demand_Model(demand_in=self.consumption_low, scenario=self.scenario, year_start=self.year,
-                                sim_days=self.days, improvement_percentage=20)
+                                sim_days=self.days, improvement_percentage=self.forecast_improvement)
         print('RUNNING DEMAND SIMULATION')
         demand_model.make_multi_area_highres_scenario()
         self.consumption_actual = demand_model.dict
@@ -770,7 +773,8 @@ class Model:
             self.netted_imbalance[a] = imb_list[a]
         for l in self.acindx:
             self.ac_netting[l] = ac_list[l]
-            self.ac_post_high[l] = self.ac_pre_high[l] + self.ac_netting[l] - self.ac_netting[self.ac_pair[l]]
+        for l in self.acindx:
+            self.ac_post_high[l] = self.ac_pre_high[l] + self.ac_netting[l] #- self.ac_netting[self.ac_pair[l]]
 
     def imbalance_filtering(self):
         self.slow_imbalance = pd.DataFrame(columns=self.areas, index=self.timestamps_high_str)
@@ -824,6 +828,10 @@ class Model:
         self.results['High']['Deterministic imbalance'] = self.deterministic_imbalances
         self.results['High']['Netting transmission'] = self.ac_netting
         self.results['High']['Post-net transmission'] = self.ac_post_high
+        self.results['High']['Thermal'] = self.thermal_high
+        self.results['High']['Nuclear'] = self.nuclear_high
+        self.results['High']['HVDC'] = self.hvdc_high
+        self.results['High']['Flex'] = self.flex_high
         self.results['High']['Wind'] = self.wind_high
         self.results['High']['Consumption'] = self.consumption_high
         self.results['High']['PV'] = self.pv_high
@@ -839,6 +847,7 @@ class Model:
         self.results['Low']['Nuclear'] = self.nuclear_low
         self.results['Low']['Flex'] = self.flex_low
         self.results['Time'] = self.time
+
         if self.quarters:
             with open(f'{self.path}{self.scenario}_{self.year}_Quarter.pickle', 'wb') as handle:
                 pkl.dump(self.results, handle, protocol=pkl.HIGHEST_PROTOCOL)
@@ -889,6 +898,7 @@ class Model:
 
 m = Model(start_date='2010-01-01', scenario='EF45', simulated_days=7, save=True, quarters=False, fixed_ramp=False, trm=False)
 m.run()
+
 
 
 
