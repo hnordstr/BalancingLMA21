@@ -19,7 +19,7 @@ import pickle as pkl
 
 class Model:
     def __init__(self, name='Model', scenario='EF45', start_date='2010-01-01',
-                 simulated_days=52*7, save=False, quarters=False, fixed_ramp=False, trm=False, forecast_improvement=0):
+                 simulated_days=52*7, save=False, quarters=False, fixed_ramp=False, trm=False, forecast_improvement=0, seed=1):
         """"
         argument description:
         name: optional name,
@@ -31,6 +31,7 @@ class Model:
         fixed_ramp: boolean. If true, all controllable components ramp in 20 min period around TP shift (5 min if quarters=True). If false, components ramp as fast as technically possible
         trm: boolean. If true, transmission reliability margin is used in imbalance netting. If false, only NTC used in imbalance netting
         forecast_improvemennt: float. Perecentual forecast improvement. If this is zero, the model generates forecasts that have the same relative size as today's forecast errors.
+        seed: integer. Specific seed number for random variables in forecast error simulation model, to ensure reproducability of results
         """
         self.start_date = datetime.strptime(start_date, '%Y-%m-%d')
         self.year = self.start_date.year
@@ -41,6 +42,7 @@ class Model:
         self.path = 'C:\\Users\\hnordstr\\OneDrive - KTH\\box_files\\KTH\\Papers&Projects\\J3 - Balancing analysis\\Results\\'
         self.save = save
         self.name = name
+        self.seed = seed
         self.scenario = scenario
         if self.scenario not in ['EF45', 'FM45', 'EP45', 'SF45']:
             print('NON-VALID SCENARIO')
@@ -465,7 +467,7 @@ class Model:
 
     def varying_simulation(self):
         wind_model = Wind_Model(wind_in=self.wind_low, scenario=self.scenario, year_start=self.year,
-                                sim_days=self.days, improvement_percentage=self.forecast_improvement)
+                                sim_days=self.days, improvement_percentage=self.forecast_improvement, seed=self.seed)
         print('RUNNING WIND POWER SIMULATION')
         wind_model.make_multi_area_highres_scenario()
 
@@ -477,7 +479,7 @@ class Model:
             self.wind_actual_low[area] = self.wind_actual[area]['Hourly']['Actual'].tolist()
 
         pv_model = Solar_Model(pv_in=self.pv_low, scenario=self.scenario, year_start=self.year,
-                                sim_days=self.days, improvement_percentage=self.forecast_improvement)
+                                sim_days=self.days, improvement_percentage=self.forecast_improvement,seed=self.seed+10)
         print('RUNNING SOLAR POWER SIMULATION')
         pv_model.make_multi_area_highres_scenario()
         self.pv_actual = pv_model.dict
@@ -492,7 +494,7 @@ class Model:
                 self.pv_actual_low[area] = self.pv_actual[area]['Hourly']['Actual'].tolist()
 
         demand_model = Demand_Model(demand_in=self.consumption_low, scenario=self.scenario, year_start=self.year,
-                                sim_days=self.days, improvement_percentage=self.forecast_improvement)
+                                sim_days=self.days, improvement_percentage=self.forecast_improvement,seed=self.seed+20)
         print('RUNNING DEMAND SIMULATION')
         demand_model.make_multi_area_highres_scenario()
         self.consumption_actual = demand_model.dict
@@ -897,7 +899,7 @@ class Model:
 
 
 m = Model(start_date='2010-01-01', scenario='EF45', simulated_days=7, save=True, quarters=False, fixed_ramp=False, trm=False)
-m.run()
+m.create_high_resolution()
 
 
 

@@ -23,10 +23,12 @@ import numpy as np
 import scipy.interpolate as interpolate
 from datetime import datetime, timedelta
 import random
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 class Solar_Model:
 
-    def __init__(self, pv_in, scenario, year_start, sim_days, improvement_percentage=0):
+    def __init__(self, pv_in, scenario, year_start, sim_days, improvement_percentage=0, seed=1):
         self.start_idx = (year_start - 1982) * 52 * 7 * 24
         start_point = datetime.strptime(f'{year_start}-01-01 00:00', '%Y-%m-%d %H:%M')
         self.end_idx = self.start_idx + sim_days * 24
@@ -46,6 +48,7 @@ class Solar_Model:
         self.lma_areas = ('SE1', 'SE2', 'SE3', 'SE4', 'NO1', 'NO2', 'NO3', 'NO4', 'NO5', 'DK2', 'FI')
         self.pv = pv_in
         self.scenario = scenario
+        self.seed = seed
         self.area_to_idx = {
             'SE1': 0,
             'SE2': 1,
@@ -118,6 +121,8 @@ class Solar_Model:
         std = []
         for w in rel_pv_in.tolist():
             std.append(self.stdev_function(w))
+        
+        random.seed(self.seed + self.area_to_idx[a])
         rndm = []
         rndm.append(0)
         for i in range(length):
@@ -160,6 +165,7 @@ class Solar_Model:
             for w in rel_pv_in[a].tolist():
                 std.append(self.stdev_function(w))
 
+            random.seed(self.seed + self.area_to_idx[a])
             rndm.append(0)
             for i in range(length):
                 rndm.append(random.gauss(0, 1))
